@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>reveal.js</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/black.css">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<section data-markdown>
+					<textarea data-template>
+						Programação Assíncrona com Kotlin Coroutines
+					</textarea>
+				</section>
+				<section>
+					<h4>Um breve histórico...</h4>
+					<img src="/assets/slide_1.jpg" alt="" width="60%">
+				</section>
+				<section>
+					<h5>Maio 2005 -> lançamento do Pentium D e AMD Athlon X2</h5>
+					<div style="display:flex; gap: 15%;">
+						<img src="/assets/pentium.jpg" alt="" width="40%">
+						<img src="/assets/athlon.png" alt="" width="40%">
+					</div>
+				</section>
+				<section>
+					<h5>E como diabos conseguíamos rodar múltiplos programas ao mesmo tempo antes disso?</h5>
+					<h5 class="fragment">Concorrência!</h5>
+					<img class="fragment" src="/assets/concurrency.webp" alt="" width="80%">
+				</section>
+				<section>
+					<img src="/assets/threading_1.jpg" alt="">
+				</section>
+				<section>
+					<h5>Concorrência vs paralelismo</h5>
+					<img src="/assets/concurrency_2.webp" alt="">
+				</section>
+				<section>
+					<h5>Modelos de programação</h5>
+					<p class="fragment">sync</p>
+					<pre class="fragment"><code data-trim data-noescape>
+						console.log('First');
+						console.log('Second');
+						console.log('Third');
+					</code></pre>
+				</section>
+				<section>
+					<h5>Modelos de programação</h5>
+					<p class="fragment">async - threads</p>
+					<pre class="fragment"><code data-trim data-noescape>
+						val queue = LinkedBlockingQueue<Int>()
+
+						thread {
+							println("concurrency ftw")
+							Thread.sleep(1000)
+							println("finish sleeping!")
+							queue.add(1)
+						}.start()
+
+						println("first")
+						println(queue.take())
+					</code></pre>
+				</section>
+				<section>
+					<h5>Modelos de programação</h5>
+					<p class="fragment">async - callbacks</p>
+					<div class="fragment" style="display:flex; gap: 15%;">
+						<pre style="font-size:0.3em!important"><code data-trim data-noescape>
+							setTimeout(() => {
+								console.log('First')
+								setTimeout(() => {
+									console.log('Second')
+									setTimeout(() => {
+										console.log('Third')
+										setTimeout(() => {
+											console.log('Fourth')
+											setTimeout(() => {
+												console.log('Fifth')
+												setTimeout(() => {
+													console.log('Sixt')
+													setTimeout(() => {
+														console.log('Seventh')
+													}, 700)
+												}, 600)
+											}, 500)
+										}, 400)
+									}, 300)
+								}, 200)
+							}, 100)
+						</code></pre>
+						<img src="/assets/hadouken.jpg" alt="">
+					</div>
+				</section>
+				<section>
+					<p class="fragment">async - promises / futures</p>
+					<div class="fragment" style="display:flex; flex-direction: column;">
+						<pre style="font-size:0.3em!important"><code data-trim data-noescape>
+							doSomething()
+								.then((result) => doSomethingElse(result))
+								.then((newResult) => doThirdThing(newResult))
+								.then((finalResult) => {
+									console.log(`Got the final result: ${finalResult}`);
+								})
+								.catch(failureCallback);
+						</code></pre>
+						<pre style="font-size:0.3em!important"><code data-trim data-noescape>
+							public static void main(String[] args) throws ExecutionException, InterruptedException {
+								int val = 0;
+								CompletableFuture<String> completableFuture = CompletableFuture.supplyAsync(() -> {
+									if(val == 0) {
+										throw new IllegalArgumentException("Value is 0");
+									}
+									if(val > 0) {
+										return "Positive value!";
+									} else {
+										return "Negative value!";
+									}
+								}).exceptionally(ex -> { // printing error messages & returning a default value
+									System.out.println("Failed due: " + ex.getMessage());
+									return "Default value!";
+								});
+								//get() blocks and gets the result of the Future
+								System.out.println(completableFuture.get());
+							}
+						</code></pre>
+					</div>
+				</section>
+
+				<section>
+					<h5>Modelos de programação</h5>
+					<p class="fragment">async - async/await</p>
+					<pre class="fragment" style="font-size:0.3em!important"><code data-trim data-noescape>
+						async function showAvatar() {
+
+							// read our JSON
+							let response = await fetch('/article/promise-chaining/user.json');
+							let user = await response.json();
+
+							// read github user
+							let githubResponse = await fetch(`https://api.github.com/users/${user.name}`);
+							let githubUser = await githubResponse.json();
+
+							// show the avatar
+							let img = document.createElement('img');
+							img.src = githubUser.avatar_url;
+							img.className = "promise-avatar-example";
+							document.body.append(img);
+
+							// wait 3 seconds
+							await new Promise((resolve, reject) => setTimeout(resolve, 3000));
+
+							img.remove();
+
+							return githubUser;
+						  }
+
+						  showAvatar();
+					</code></pre>
+				</section>
+
+				<section>
+					<h5>Modelos de programação</h5>
+					<p class="fragment">coroutines</p>
+					<pre class="fragment" style="font-size:0.3em!important"><code data-trim data-noescape>
+						fun main() = runBlocking {
+							val time = measureTimeMillis {
+								val cars = async { fetchCarsAmount() }
+								val bikes = async { fetchBikesAmount() }
+								println("The answer is ${cars.await() + bikes.await()}")
+							}
+							println("Completed in $time ms")
+						}
+
+						suspend fun fetchCarsAmount(): Int {
+							delay(1000L)
+							return 13
+						}
+
+						suspend fun fetchBikesAmount(): Int {
+							delay(1000L)
+							return 29
+						}
+					</code></pre>
+				</section>
+
+				<section>
+					<h5>E os servidores Web?</h5>
+					<ul class="fragment">
+						<li>Thread por request (Apache, Tomcat, JBoss)</li>
+						<li>Event loop</li> (Netty, Nginx, Undertow)
+					</ul>
+				</section>
+
+				<section>
+					<h5>Thread por request</h5>
+					<img src="/assets/tomcat.webp" alt="">
+				</section>
+
+				<section>
+					<h5>Event loop</h5>
+					<div style="display:flex; gap: 10%; flex-direction:column;">
+						<img src="/assets/event-loop.webp" width="80%" alt="">
+						<img src="/assets/event-loop-2.webp" width="80%" alt="">
+					</div>
+				</section>
+
+				<section>
+					Demo por favor né
+				</section>
+
+				<section>
+					<h1>Obrigado!</h1>
+					<img src="/assets/thumbs_up_kid.gif" alt="">
+				</section>
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
